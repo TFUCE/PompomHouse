@@ -1,12 +1,17 @@
 {% extends 'base.html' %}
+
 {% block title %}Home{% endblock %}
+{% block meta_description %}Browse housing listings, manage bookings, read messages, and update your account on Pompom House.{% endblock %}
+
 {% block content %}
 <div class="two-col">
   {% include 'partials/profile_sidebar.html' %}
 
   <section class="home-main">
     {% if request.user.is_tenant and profile_incomplete %}
-      <div class="status-message warning">Complete your budget and move-in date in Account to improve your Match Score.</div>
+      <div class="status-message warning">
+        Complete your budget and move-in date in Account to improve your Match Score.
+      </div>
     {% endif %}
 
     {% if request.user.is_landlord %}
@@ -17,7 +22,7 @@
 
     <div class="listing-grid home-listing-grid">
       {% for apartment, match in listing_pairs %}
-        {% include 'partials/listing_card.html' with apartment=apartment match=match %}
+        {% include 'partials/listing_card.html' with apartment=apartment match=match is_first=forloop.first %}
       {% empty %}
         <div class="empty-state">No listings are available yet.</div>
       {% endfor %}

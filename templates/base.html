@@ -5,6 +5,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{% block title %}Pompom House{% endblock %}</title>
+  <meta name="description" content="{% block meta_description %}Pompom House helps tenants find housing and helps landlords manage listings, booking requests and messages.{% endblock %}">
   <link rel="stylesheet" href="{% static 'css/styles.css' %}">
   <script defer src="{% static 'js/app.js' %}"></script>
 </head>
@@ -14,35 +15,47 @@
   <header class="site-header">
     <div class="container nav-wrap">
       <a class="brand" href="{% if request.user.is_authenticated %}{% url 'home' %}{% else %}{% url 'landing' %}{% endif %}">Pompom House</a>
+
       <nav aria-label="Primary navigation">
         <ul class="nav-list">
           {% if request.user.is_authenticated %}
             <li><a href="{% url 'home' %}">Home</a></li>
+
             <li>
               <a href="{% url 'apartments:requests' %}">
                 Booking
-                {% if has_booking_alert %}<span class="nav-alert" aria-label="New booking update">!</span>{% endif %}
+                {% if has_booking_alert %}
+                  <span class="nav-alert" aria-label="New booking update">!</span>
+                {% endif %}
               </a>
             </li>
+
             <li>
               <a href="{% url 'messaging:list' %}">
                 Messages
-                {% if has_message_alert %}<span class="nav-alert" aria-label="New message">!</span>{% endif %}
+                {% if has_message_alert %}
+                  <span class="nav-alert" aria-label="New message">!</span>
+                {% endif %}
               </a>
             </li>
+
             {% if request.user.is_tenant %}
               <li><a href="{% url 'apartments:listings' %}">Search</a></li>
               <li><a href="{% url 'apartments:favourites' %}">Favourites</a></li>
             {% endif %}
+
             <li class="nav-dropdown-item">
               <details class="nav-dropdown">
                 <summary class="nav-dropdown-toggle">Account</summary>
                 <div class="nav-dropdown-menu">
                   <a href="{% url 'users:account' %}?section=profile">My profile</a>
-                  {% if request.user.is_tenant %}<a href="{% url 'users:account' %}?section=preferences">Housing preferences</a>{% endif %}
+                  {% if request.user.is_tenant %}
+                    <a href="{% url 'users:account' %}?section=preferences">Housing preferences</a>
+                  {% endif %}
                 </div>
               </details>
             </li>
+
             <li>
               <form method="post" action="{% url 'logout' %}">
                 {% csrf_token %}
@@ -67,6 +80,7 @@
         {% endfor %}
       </div>
     {% endif %}
+
     {% block content %}{% endblock %}
   </main>
 </body>

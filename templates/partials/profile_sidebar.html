@@ -1,20 +1,40 @@
 <aside class="card sidebar profile-sidebar">
   <div class="profile-avatar-wrap">
     {% if request.user.avatar %}
-      <img class="profile-avatar" src="{{ request.user.avatar.url }}" alt="{{ request.user.get_full_name|default:request.user.email }}">
+      <img
+        class="profile-avatar"
+        src="{{ request.user.avatar.url }}"
+        alt="{{ request.user.get_full_name|default:request.user.email }}"
+        width="120"
+        height="120"
+        loading="lazy"
+        decoding="async"
+      >
     {% else %}
-      <div class="profile-avatar placeholder" aria-hidden="true">{{ request.user.first_name|default:request.user.email|slice:':1'|upper }}</div>
+      <div class="profile-avatar placeholder" aria-hidden="true">
+        {{ request.user.first_name|default:request.user.email|slice:':1'|upper }}
+      </div>
     {% endif %}
   </div>
+
   <h2 class="profile-name">{{ request.user.get_full_name|default:request.user.email }}</h2>
   <p class="muted profile-role">{{ request.user.get_role_display }}</p>
+
   {% if request.user.is_tenant and profile %}
     <ul class="compact-list">
-      <li><strong>Budget:</strong> {% if profile.budget_min and profile.budget_max %}£{{ profile.budget_min }} - £{{ profile.budget_max }}{% else %}Not set{% endif %}</li>
+      <li>
+        <strong>Budget:</strong>
+        {% if profile.budget_min and profile.budget_max %}
+          £{{ profile.budget_min }} - £{{ profile.budget_max }}
+        {% else %}
+          Not set
+        {% endif %}
+      </li>
       <li><strong>Move-in:</strong> {{ profile.move_in_date|default:'Not set' }}</li>
       <li><strong>Smoker:</strong> {{ profile.is_smoker|yesno:'Yes,No' }}</li>
       <li><strong>Has pet:</strong> {{ profile.has_pet|yesno:'Yes,No' }}</li>
     </ul>
+
     {% if request.user.sidebar_hobbies %}
       <div class="sidebar-hobbies">
         <strong>Hobbies:</strong>
