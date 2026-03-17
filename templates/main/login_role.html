@@ -1,0 +1,24 @@
+{% extends 'base.html' %}
+{% block title %}{{ role_label }} login{% endblock %}
+{% block content %}
+<div class="auth-shell card">
+  <h1>{{ role_label }} login</h1>
+  <form method="post" novalidate>
+    {% csrf_token %}
+    {% for field in form %}
+      <div class="form-row">
+        <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+        {{ field }}
+        {% if field.help_text %}<div class="help-text">{{ field.help_text }}</div>{% endif %}
+        {{ field.errors }}
+      </div>
+    {% endfor %}
+    {% if form.non_field_errors %}<div class="errorlist">{{ form.non_field_errors }}</div>{% endif %}
+    <div class="button-row">
+      <button type="submit">Sign in</button>
+      <a class="button secondary" href="{% url 'register-choice' %}">Create an account</a>
+    </div>
+    <p class="section-spacing-top"><a href="{% url 'password-reset' role %}">Forgot password?</a></p>
+  </form>
+</div>
+{% endblock %}

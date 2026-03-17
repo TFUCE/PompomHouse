@@ -1,0 +1,73 @@
+{% load static %}
+<!doctype html>
+<html lang="en-GB">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Pompom House{% endblock %}</title>
+  <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+  <script defer src="{% static 'js/app.js' %}"></script>
+</head>
+<body>
+  <a class="skip-link" href="#main-content">Skip to content</a>
+
+  <header class="site-header">
+    <div class="container nav-wrap">
+      <a class="brand" href="{% if request.user.is_authenticated %}{% url 'home' %}{% else %}{% url 'landing' %}{% endif %}">Pompom House</a>
+      <nav aria-label="Primary navigation">
+        <ul class="nav-list">
+          {% if request.user.is_authenticated %}
+            <li><a href="{% url 'home' %}">Home</a></li>
+            <li>
+              <a href="{% url 'apartments:requests' %}">
+                Booking
+                {% if has_booking_alert %}<span class="nav-alert" aria-label="New booking update">!</span>{% endif %}
+              </a>
+            </li>
+            <li>
+              <a href="{% url 'messaging:list' %}">
+                Messages
+                {% if has_message_alert %}<span class="nav-alert" aria-label="New message">!</span>{% endif %}
+              </a>
+            </li>
+            {% if request.user.is_tenant %}
+              <li><a href="{% url 'apartments:listings' %}">Search</a></li>
+              <li><a href="{% url 'apartments:favourites' %}">Favourites</a></li>
+            {% endif %}
+            <li class="nav-dropdown-item">
+              <details class="nav-dropdown">
+                <summary class="nav-dropdown-toggle">Account</summary>
+                <div class="nav-dropdown-menu">
+                  <a href="{% url 'users:account' %}?section=profile">My profile</a>
+                  {% if request.user.is_tenant %}<a href="{% url 'users:account' %}?section=preferences">Housing preferences</a>{% endif %}
+                </div>
+              </details>
+            </li>
+            <li>
+              <form method="post" action="{% url 'logout' %}">
+                {% csrf_token %}
+                <button type="submit" class="link-button">Log out</button>
+              </form>
+            </li>
+          {% else %}
+            <li><a href="{% url 'landing' %}">Home</a></li>
+            <li><a href="{% url 'login' %}">Log in</a></li>
+            <li><a href="{% url 'register-choice' %}">Register</a></li>
+          {% endif %}
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main-content" class="container page-content">
+    {% if messages %}
+      <div aria-live="polite" aria-atomic="true">
+        {% for message in messages %}
+          <div class="status-message {{ message.tags }}">{{ message }}</div>
+        {% endfor %}
+      </div>
+    {% endif %}
+    {% block content %}{% endblock %}
+  </main>
+</body>
+</html>

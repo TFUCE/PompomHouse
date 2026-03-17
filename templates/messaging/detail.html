@@ -1,0 +1,49 @@
+{% extends 'base.html' %}
+{% block title %}Conversation{% endblock %}
+{% block content %}
+<div class="two-col">
+  {% include 'partials/profile_sidebar.html' %}
+
+  <section class="card booking-shell">
+    <div class="conversation-header">
+      <div>
+        <h1>{{ conversation.apartment.display_title }}</h1>
+        <p class="muted">
+          {% if request.user.is_tenant %}
+            Landlord: {{ conversation.other_participant_label_for_tenant }}
+          {% else %}
+            Tenant: {{ conversation.other_participant_label_for_landlord }}
+          {% endif %}
+        </p>
+      </div>
+      <a class="button secondary" href="{% url 'messaging:list' %}">Back to messages</a>
+    </div>
+
+    <div class="message-thread" aria-live="polite">
+      {% for item in conversation.messages.all %}
+        <article class="message-bubble {% if item.sender_id == request.user.id %}mine{% else %}theirs{% endif %}">
+          <div class="message-meta">
+            <strong>{{ item.sender.get_full_name|default:item.sender.email }}</strong>
+            <span>{{ item.created_at|date:'Y-m-d H:i' }}</span>
+          </div>
+          <p>{{ item.body|linebreaksbr }}</p>
+        </article>
+      {% empty %}
+        <div class="empty-state">No messages yet. Send the first one below.</div>
+      {% endfor %}
+    </div>
+
+    <section class="card section-spacing-top">
+      <form method="post" novalidate>
+        {% csrf_token %}
+        <div class="form-row">
+          <label for="{{ form.body.id_for_label }}">{{ form.body.label }}</label>
+          {{ form.body }}
+          {{ form.body.errors }}
+        </div>
+        <button type="submit">Send message</button>
+      </form>
+    </section>
+  </section>
+</div>
+{% endblock %}

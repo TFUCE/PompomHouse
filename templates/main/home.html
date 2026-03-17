@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+{% block title %}Home{% endblock %}
+{% block content %}
+<div class="two-col">
+  {% include 'partials/profile_sidebar.html' %}
+
+  <section class="home-main">
+    {% if request.user.is_tenant and profile_incomplete %}
+      <div class="status-message warning">Complete your budget and move-in date in Account to improve your Match Score.</div>
+    {% endif %}
+
+    {% if request.user.is_landlord %}
+      <div class="button-row home-actions">
+        <a class="button" href="{% url 'apartments:add' %}">Add apartment</a>
+      </div>
+    {% endif %}
+
+    <div class="listing-grid home-listing-grid">
+      {% for apartment, match in listing_pairs %}
+        {% include 'partials/listing_card.html' with apartment=apartment match=match %}
+      {% empty %}
+        <div class="empty-state">No listings are available yet.</div>
+      {% endfor %}
+    </div>
+  </section>
+</div>
+{% endblock %}

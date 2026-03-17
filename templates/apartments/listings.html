@@ -1,0 +1,64 @@
+{% extends 'base.html' %}
+{% block title %}Search listings{% endblock %}
+{% block content %}
+<div class="two-col">
+  {% if request.user.is_authenticated %}
+    {% include 'partials/profile_sidebar.html' %}
+  {% endif %}
+
+  <div class="grid grid-gap-md">
+    <section class="card">
+      <form method="get" novalidate>
+        <div class="form-grid">
+          {% for field in form %}
+            {% if field.name == 'available_year' %}
+              <div class="form-row">
+                <label>Available from</label>
+                <div class="triple-select-row">
+                  {{ form.available_year }}
+                  {{ form.available_month }}
+                  {{ form.available_day }}
+                </div>
+                {{ form.available_year.errors }}
+                {{ form.available_month.errors }}
+                {{ form.available_day.errors }}
+              </div>
+            {% elif field.name == 'available_month' or field.name == 'available_day' %}
+            {% else %}
+              <div class="form-row{% if field.field.widget.input_type == 'checkbox' %} checkbox-row inline-check-field{% endif %}">
+                {% if field.field.widget.input_type == 'checkbox' %}
+                  {{ field }}
+                  <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                {% else %}
+                  <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                  {{ field }}
+                {% endif %}
+                {{ field.errors }}
+              </div>
+            {% endif %}
+          {% endfor %}
+        </div>
+        <div class="button-row">
+          <button type="submit" name="search" value="1">Search</button>
+          <a class="button secondary" href="{% url 'apartments:listings' %}">Reset</a>
+        </div>
+      </form>
+    </section>
+
+    {% if submitted %}
+      <section class="card">
+        <h2>Results</h2>
+        {% if results %}
+          <div class="listing-grid">
+            {% for apartment, match in results %}
+              {% include 'partials/listing_card.html' with apartment=apartment match=match %}
+            {% endfor %}
+          </div>
+        {% else %}
+          <div class="empty-state">No listings matched your search.</div>
+        {% endif %}
+      </section>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

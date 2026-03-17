@@ -1,0 +1,52 @@
+{% extends 'base.html' %}
+{% block title %}{{ page_title }}{% endblock %}
+{% block content %}
+<div class="card">
+  <h1>{{ page_title }}</h1>
+  <form method="post" enctype="multipart/form-data" novalidate>
+    {% csrf_token %}
+    <div class="form-grid apartment-form-grid">
+      {% for field in form %}
+        {% if field.name == 'available_year' %}
+          <div class="form-row apartment-field apartment-field-available_from">
+            <label>Available from *</label>
+            <div class="triple-select-row">
+              {{ form.available_year }}
+              {{ form.available_month }}
+              {{ form.available_day }}
+            </div>
+            {{ form.available_year.errors }}
+            {{ form.available_month.errors }}
+            {{ form.available_day.errors }}
+          </div>
+        {% elif field.name == 'available_month' or field.name == 'available_day' %}
+        {% else %}
+          <div class="form-row apartment-field apartment-field-{{ field.name }}{% if field.field.widget.input_type == 'checkbox' %} checkbox-row inline-check-field{% endif %}{% if field.name == 'room_count' %} room-count-row{% endif %}">
+            {% if field.field.widget.input_type == 'checkbox' %}
+              {{ field }}
+              <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+            {% else %}
+              <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+              {{ field }}
+            {% endif %}
+            {% if field.help_text %}<p class="muted">{{ field.help_text }}</p>{% endif %}
+            {{ field.errors }}
+          </div>
+        {% endif %}
+      {% endfor %}
+    </div>
+
+    <h2>Listing photo</h2>
+    <div class="card section-spacing-bottom">
+      {% for field in image_form %}
+        <div class="form-row">
+          <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+          {{ field }}
+          {{ field.errors }}
+        </div>
+      {% endfor %}
+    </div>
+    <button type="submit">Save listing</button>
+  </form>
+</div>
+{% endblock %}

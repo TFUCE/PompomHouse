@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+{% block title %}Saved favourites{% endblock %}
+{% block content %}
+<div class="two-col">
+  {% include 'partials/profile_sidebar.html' %}
+
+  <section class="home-main">
+    <div class="section-heading-row">
+      <h1>Saved favourites</h1>
+      <a class="button secondary" href="{% url 'apartments:listings' %}">Search more listings</a>
+    </div>
+
+    <div class="listing-grid home-listing-grid">
+      {% for apartment, match in listing_pairs %}
+        {% include 'partials/listing_card.html' with apartment=apartment match=match %}
+      {% empty %}
+        <div class="empty-state">You have not saved any listings yet.</div>
+      {% endfor %}
+    </div>
+  </section>
+</div>
+{% endblock %}

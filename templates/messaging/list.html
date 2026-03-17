@@ -1,0 +1,46 @@
+{% extends 'base.html' %}
+{% block title %}Messages{% endblock %}
+{% block content %}
+<div class="two-col">
+  {% include 'partials/profile_sidebar.html' %}
+
+  <section class="card booking-shell">
+    <h1>Messages</h1>
+    <p class="muted">Approved booking requests automatically open a private conversation between the tenant and landlord.</p>
+
+    <div class="conversation-list">
+      {% for conversation in conversations %}
+        <article class="card conversation-card">
+          <div class="conversation-card-top">
+            <div>
+              <h2>
+                {{ conversation.apartment.display_title }}
+                {% if conversation.has_unread_messages %}<span class="inline-alert">New</span>{% endif %}
+              </h2>
+              <p class="muted">
+                {% if request.user.is_tenant %}
+                  Landlord: {{ conversation.other_participant_label_for_tenant }}
+                {% else %}
+                  Tenant: {{ conversation.other_participant_label_for_landlord }}
+                {% endif %}
+              </p>
+            </div>
+            <a class="button" href="{% url 'messaging:detail' conversation.id %}">Open chat</a>
+          </div>
+          <p class="small-text"><strong>Request status:</strong> {{ conversation.contact_request.get_status_display }}</p>
+          {% with last_message=conversation.messages.last %}
+            {% if last_message %}
+              <p class="muted"><strong>Last message:</strong> {{ last_message.body|truncatewords:16 }}</p>
+              <p class="small-text muted">{{ last_message.created_at|date:'Y-m-d H:i' }}</p>
+            {% else %}
+              <p class="muted">No messages yet. Start the conversation from the chat page.</p>
+            {% endif %}
+          {% endwith %}
+        </article>
+      {% empty %}
+        <div class="empty-state">No conversations are available yet. A conversation will appear after a landlord approves a booking request.</div>
+      {% endfor %}
+    </div>
+  </section>
+</div>
+{% endblock %}

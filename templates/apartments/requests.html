@@ -1,0 +1,181 @@
+{% extends 'base.html' %}
+{% block title %}Booking{% endblock %}
+{% block content %}
+<div class="two-col">
+  {% include 'partials/profile_sidebar.html' %}
+
+  <section class="card booking-shell">
+<div class="grid booking-grid">
+      <section class="card booking-panel">
+        <h2>Pending</h2>
+        {% if pending %}
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>{% if request.user.is_landlord %}Tenant{% else %}Listing{% endif %}</th>
+                  {% if request.user.is_landlord %}<th>Apartment</th>{% else %}<th>Landlord</th>{% endif %}
+                  <th>Email</th>
+                  <th>Status</th>
+                  <th>Created</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for item in pending %}
+                  <tr>
+                    <td>{% if request.user.is_landlord %}{{ item.tenant.get_full_name|default:item.tenant.email }}{% else %}{{ item.apartment.display_title }}{% endif %}</td>
+                    {% if request.user.is_landlord %}<td>{{ item.apartment.display_title }}</td>{% else %}<td>{{ item.apartment.owner.get_full_name|default:item.apartment.owner.email }}</td>{% endif %}
+                    <td>{% if request.user.is_landlord %}<a href="mailto:{{ item.tenant.email }}">{{ item.tenant.email }}</a>{% else %}<a href="mailto:{{ item.apartment.owner.email }}">{{ item.apartment.owner.email }}</a>{% endif %}</td>
+                    <td>{{ item.get_status_display }}</td>
+                    <td>{{ item.created_at|date:'Y-m-d H:i' }}</td>
+                    <td>
+                      {% if request.user.is_landlord %}
+                        <div class="button-row">
+                          <a class="button success" href="{% url 'apartments:update-request' item.id 'approve' %}">Approve</a>
+                          <a class="button danger" href="{% url 'apartments:update-request' item.id 'reject' %}">Reject</a>
+                        </div>
+                      {% else %}
+                        Awaiting landlord response
+                      {% endif %}
+                    </td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        {% else %}
+          <div class="empty-state">No pending requests.</div>
+        {% endif %}
+      </section>
+
+      <section class="card booking-panel">
+        <h2>Approved</h2>
+        {% if approved %}
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>{% if request.user.is_landlord %}Tenant{% else %}Listing{% endif %}</th>
+                  {% if request.user.is_landlord %}<th>Apartment</th>{% else %}<th>Landlord</th>{% endif %}
+                  <th>Email</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for item in approved %}
+                  <tr>
+                    <td>{% if request.user.is_landlord %}{{ item.tenant.get_full_name|default:item.tenant.email }}{% else %}{{ item.apartment.display_title }}{% endif %}</td>
+                    {% if request.user.is_landlord %}<td>{{ item.apartment.display_title }}</td>{% else %}<td>{{ item.apartment.owner.get_full_name|default:item.apartment.owner.email }}</td>{% endif %}
+                    <td>{% if request.user.is_landlord %}<a href="mailto:{{ item.tenant.email }}">{{ item.tenant.email }}</a>{% else %}<a href="mailto:{{ item.apartment.owner.email }}">{{ item.apartment.owner.email }}</a>{% endif %}</td>
+                    <td>{{ item.get_status_display }}</td>
+                    <td>
+                      <div class="button-row">
+                        <a class="button tertiary" href="{% url 'apartments:detail' item.apartment.id %}">View details</a>
+                        {% if item.has_conversation %}
+                          <a class="button secondary" href="{% url 'messaging:detail' item.conversation.id %}">Open chat</a>
+                        {% endif %}
+                        {% if request.user.is_tenant and item.status == 'approved' %}
+                          <a class="button danger" href="{% url 'apartments:request-move-out' item.id %}">Request move-out</a>
+                        {% elif request.user.is_landlord and item.status == 'leave_pending' %}
+                          <a class="button success" href="{% url 'apartments:approve-move-out' item.id %}">Approve move-out</a>
+                        {% elif item.status == 'leave_pending' %}
+                          <span class="muted">Move-out request pending</span>
+                        {% endif %}
+                      </div>
+                    </td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        {% else %}
+          <div class="empty-state">No approved requests yet.</div>
+        {% endif %}
+      </section>
+
+
+      <section class="card booking-panel">
+        <h2>Former stays</h2>
+        {% if former %}
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>{% if request.user.is_landlord %}Tenant{% else %}Listing{% endif %}</th>
+                  {% if request.user.is_landlord %}<th>Apartment</th>{% else %}<th>Landlord</th>{% endif %}
+                  <th>Email</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for item in former %}
+                  <tr>
+                    <td>{% if request.user.is_landlord %}{{ item.tenant.get_full_name|default:item.tenant.email }}{% else %}{{ item.apartment.display_title }}{% endif %}</td>
+                    {% if request.user.is_landlord %}<td>{{ item.apartment.display_title }}</td>{% else %}<td>{{ item.apartment.owner.get_full_name|default:item.apartment.owner.email }}</td>{% endif %}
+                    <td>{% if request.user.is_landlord %}<a href="mailto:{{ item.tenant.email }}">{{ item.tenant.email }}</a>{% else %}<a href="mailto:{{ item.apartment.owner.email }}">{{ item.apartment.owner.email }}</a>{% endif %}</td>
+                    <td>{{ item.get_status_display }}</td>
+                    <td>
+                      <div class="button-row">
+                        <a class="button tertiary" href="{% url 'apartments:detail' item.apartment.id %}">View details</a>
+                        {% if request.user.is_landlord and item.apartment.can_relist %}
+                          <form method="post" action="{% url 'apartments:relist' item.apartment.id %}" class="inline-form">
+                            {% csrf_token %}
+                            <button type="submit" class="button success">Relist</button>
+                          </form>
+                        {% endif %}
+                      </div>
+                    </td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        {% else %}
+          <div class="empty-state">No former stays yet.</div>
+        {% endif %}
+      </section>
+
+      <section class="card booking-panel">
+        <h2>Rejected</h2>
+        {% if rejected %}
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>{% if request.user.is_landlord %}Tenant{% else %}Listing{% endif %}</th>
+                  {% if request.user.is_landlord %}<th>Apartment</th>{% else %}<th>Landlord</th>{% endif %}
+                  <th>Email</th>
+                  <th>Status</th>
+                  <th>Conversation</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for item in rejected %}
+                  <tr>
+                    <td>{% if request.user.is_landlord %}{{ item.tenant.get_full_name|default:item.tenant.email }}{% else %}{{ item.apartment.display_title }}{% endif %}</td>
+                    {% if request.user.is_landlord %}<td>{{ item.apartment.display_title }}</td>{% else %}<td>{{ item.apartment.owner.get_full_name|default:item.apartment.owner.email }}</td>{% endif %}
+                    <td>{% if request.user.is_landlord %}<a href="mailto:{{ item.tenant.email }}">{{ item.tenant.email }}</a>{% else %}<a href="mailto:{{ item.apartment.owner.email }}">{{ item.apartment.owner.email }}</a>{% endif %}</td>
+                    <td>{{ item.get_status_display }}</td>
+                    <td>
+                      {% if item.has_conversation %}
+                        <a class="button secondary" href="{% url 'messaging:detail' item.conversation.id %}">Open chat</a>
+                      {% else %}
+                        <span class="muted">Available after approval</span>
+                      {% endif %}
+                    </td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        {% else %}
+          <div class="empty-state">No rejected requests.</div>
+        {% endif %}
+      </section>
+    </div>
+  </section>
+</div>
+{% endblock %}

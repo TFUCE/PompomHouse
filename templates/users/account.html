@@ -1,0 +1,100 @@
+{% extends 'base.html' %}
+{% block title %}My account{% endblock %}
+{% block content %}
+<div class="two-col">
+  {% if request.user.is_authenticated %}
+    {% include 'partials/profile_sidebar.html' %}
+  {% endif %}
+
+  <div class="grid grid-gap-md">
+    {% if section == 'profile' %}
+      <section class="card">
+        <form method="post" enctype="multipart/form-data" novalidate>
+          {% csrf_token %}
+          <input type="hidden" name="section" value="profile">
+          {% for field in details_form %}
+            {% if field.name == 'avatar' %}
+              <div class="form-row avatar-upload-row">
+                <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                {% if request.user.avatar %}
+                  <div class="current-file-line current-image-inline">
+                    <span>Current image: <a href="{{ request.user.avatar.url }}">Image</a></span>
+                    <label class="inline-check current-clear-inline" for="{{ field.id_for_label }}-clear_id">
+                      <input type="checkbox" name="avatar-clear" id="{{ field.id_for_label }}-clear_id">
+                      <span>Clear</span>
+                    </label>
+                  </div>
+                {% endif %}
+                <div class="avatar-input-line">{{ field }}</div>
+                {{ field.errors }}
+              </div>
+            {% elif field.name == 'hobbies' %}
+              <div class="form-row">
+                <label>{{ field.label }}</label>
+                <div class="checkbox-list hobby-checklist">
+                  {% for checkbox in field %}
+                    <label class="checkbox-choice" for="{{ checkbox.id_for_label }}">
+                      {{ checkbox.tag }}
+                      <span>{{ checkbox.choice_label }}</span>
+                    </label>
+                  {% endfor %}
+                </div>
+                {% if field.help_text %}<div class="help-text">{{ field.help_text }}</div>{% endif %}
+                {{ field.errors }}
+              </div>
+            {% else %}
+              <div class="form-row">
+                <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                {{ field }}
+                {% if field.help_text %}<div class="help-text">{{ field.help_text }}</div>{% endif %}
+                {{ field.errors }}
+              </div>
+            {% endif %}
+          {% endfor %}
+          <button type="submit">Save profile</button>
+        </form>
+      </section>
+    {% elif section == 'preferences' %}
+      <section class="card">
+        <form method="post" novalidate>
+          {% csrf_token %}
+          <input type="hidden" name="section" value="preferences">
+
+          {% for field in seeker_form %}
+            {% if field.name == 'move_in_year' %}
+              <div class="form-row">
+                <label>Move in date</label>
+                <div class="triple-select-row">
+                  {{ seeker_form.move_in_year }}
+                  {{ seeker_form.move_in_month }}
+                  {{ seeker_form.move_in_day }}
+                </div>
+                {{ seeker_form.move_in_year.errors }}
+                {{ seeker_form.move_in_month.errors }}
+                {{ seeker_form.move_in_day.errors }}
+              </div>
+            {% elif field.name == 'move_in_month' or field.name == 'move_in_day' %}
+            {% elif field.name == 'is_smoker' %}
+              <div class="form-row inline-boolean-group">
+                <label class="checkbox-choice" for="{{ seeker_form.is_smoker.id_for_label }}">{{ seeker_form.is_smoker }}<span>{{ seeker_form.is_smoker.label }}</span></label>
+                <label class="checkbox-choice" for="{{ seeker_form.has_pet.id_for_label }}">{{ seeker_form.has_pet }}<span>{{ seeker_form.has_pet.label }}</span></label>
+              </div>
+              {{ seeker_form.is_smoker.errors }}
+              {{ seeker_form.has_pet.errors }}
+            {% elif field.name == 'has_pet' %}
+            {% else %}
+              <div class="form-row">
+                <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                {{ field }}
+                {{ field.errors }}
+              </div>
+            {% endif %}
+          {% endfor %}
+
+          <button type="submit">Save preferences</button>
+        </form>
+      </section>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

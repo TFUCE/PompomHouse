@@ -1,0 +1,145 @@
+{% extends 'base.html' %}
+{% block title %}{{ apartment.display_title }}{% endblock %}
+{% block content %}
+<div class="grid grid-2 apartment-detail-grid">
+  <section class="card">
+    <h1>{{ apartment.display_title }}</h1>
+    <div class="meta-list">
+      <span>£{{ apartment.rent_price }}/month</span>
+      <span>{{ apartment.get_listing_mode_display }}</span>
+      <span>Available from {{ apartment.available_from }}</span>
+      {% if apartment.floor %}<span>Floor {{ apartment.floor }}</span>{% endif %}
+    </div>
+    {% if apartment.primary_image %}
+      <img class="listing-image" loading="lazy" src="{{ apartment.primary_image.image.url }}?v={{ apartment.updated_at|date:'U' }}" alt="{{ apartment.primary_image.about|default:apartment.display_title }}">
+    {% endif %}
+    {% if apartment.images.all|length > 1 %}
+      <div class="cards section-spacing-top">
+        {% for image in apartment.images.all %}
+          <img class="listing-image" loading="lazy" src="{{ image.image.url }}?v={{ apartment.updated_at|date:'U' }}" alt="{{ image.about|default:apartment.display_title }}">
+        {% endfor %}
+      </div>
+    {% endif %}
+    <p class="section-spacing-top">{{ apartment.about_text }}</p>
+
+    <section class="section-spacing-top review-section">
+      <div class="section-heading-row">
+        <h2>Ratings &amp; reviews</h2>
+        <span class="listing-pill">{{ apartment.review_summary }}</span>
+      </div>
+
+      {% if request.user.is_authenticated and request.user.is_tenant %}
+        {% if can_review %}
+          <div class="card nested-card">
+            <h3>{% if existing_review %}Update your review{% else %}Leave a review{% endif %}</h3>
+            <form method="post" action="{% url 'apartments:save-review' apartment.id %}">
+              {% csrf_token %}
+              <div class="form-grid">
+                {% for field in review_form %}
+                  <div class="form-row{% if field.field.widget.input_type == 'checkbox' %} checkbox-row inline-check-field{% endif %}">
+                    <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                    {{ field }}
+                    {{ field.errors }}
+                  </div>
+                {% endfor %}
+              </div>
+              <div class="button-row">
+                <button type="submit">{% if existing_review %}Update review{% else %}Post review{% endif %}</button>
+              </div>
+            </form>
+          </div>
+        {% else %}
+          <p class="muted">Only tenants who have stayed in this listing can review it.</p>
+        {% endif %}
+      {% endif %}
+
+      <div class="review-list section-spacing-top">
+        {% for review in reviews %}
+          <article class="card nested-card review-card">
+            <div class="section-heading-row">
+              <strong>{{ review.reviewer.get_full_name|default:review.reviewer.email }}</strong>
+              <span class="listing-pill">{{ review.rating }}/5</span>
+            </div>
+            <p>{{ review.comment }}</p>
+            <p class="muted small-text">Updated {{ review.updated_at|date:'Y-m-d' }}</p>
+          </article>
+        {% empty %}
+          <p class="muted">No reviews yet.</p>
+        {% endfor %}
+      </div>
+    </section>
+  </section>
+
+  <aside class="card">
+    <h2>Listing owner</h2>
+    <p><strong>{{ apartment.owner.get_full_name|default:apartment.owner.email }}</strong></p>
+    <p><strong>Email:</strong> <a href="mailto:{{ apartment.owner.email }}">{{ apartment.owner.email }}</a></p>
+    <p>{{ apartment.owner.bio|default:'No bio provided yet.' }}</p>
+
+    <div class="roommate-block">
+      <h3>Current roommates</h3>
+      {% if approved_roommates %}
+        <div class="detail-roommates">
+          {% for item in approved_roommates %}
+            <div class="detail-roommate-item">
+              <strong>{{ item.tenant.get_full_name|default:item.tenant.email }}</strong><br>
+              <span class="muted">{{ item.tenant.seeker_profile.get_gender_display|default:'Prefer not to say' }} · {{ item.tenant.seeker_profile.age|default:'Age not shared' }}</span>
+              <div class="badge-row roommate-hobby-row">
+                <strong>Hobbies:</strong>
+                {% for hobby in item.tenant.hobbies.all %}
+                  <span class="badge">{{ hobby.name }}</span>
+                {% empty %}
+                  <span class="muted">No hobbies shared yet.</span>
+                {% endfor %}
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <p class="muted">No tenant profiles are attached to this listing yet.</p>
+      {% endif %}
+    </div>
+
+    {% if match %}
+      <div class="score-box">
+        <h3>Match Score: {{ match.score }}/100</h3>
+        <ul>
+          {% for reason in match.reasons %}
+            <li>{{ reason }}</li>
+          {% endfor %}
+        </ul>
+      </div>
+    {% endif %}
+
+    {% if apartment.is_fully_rented %}
+      <p><span class="listing-status status-rented">{{ apartment.status_label }}</span></p>
+    {% endif %}
+
+    {% if request.user.is_authenticated and request.user.is_tenant %}
+      <div class="button-row detail-actions">
+        {% if apartment.public_visible %}
+          <a class="button" href="{% url 'apartments:create-request' apartment.id %}">Request contact</a>
+        {% else %}
+          <span class="listing-pill muted-pill">Not open for new requests</span>
+        {% endif %}
+        <form method="post" action="{% url 'apartments:toggle-favourite' apartment.id %}" class="inline-form">
+          {% csrf_token %}
+          <button type="submit" class="button tertiary">{% if apartment.is_saved %}Saved{% else %}Save{% endif %}</button>
+        </form>
+      </div>
+    {% elif request.user == apartment.owner %}
+      <div class="button-row detail-actions">
+        <a class="button secondary" href="{% url 'apartments:edit' apartment.id %}">Edit</a>
+        {% if apartment.can_relist %}
+          <form method="post" action="{% url 'apartments:relist' apartment.id %}" class="inline-form">
+            {% csrf_token %}
+            <button type="submit" class="button success">Relist this property</button>
+          </form>
+        {% endif %}
+      </div>
+    {% elif not request.user.is_authenticated %}
+      <p><a class="button" href="{% url 'login' %}">Sign in to request contact</a></p>
+    {% endif %}
+  </aside>
+</div>
+{% endblock %}

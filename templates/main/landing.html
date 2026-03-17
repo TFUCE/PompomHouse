@@ -1,0 +1,70 @@
+{% extends 'base.html' %}
+{% block title %}Pompom House — Home{% endblock %}
+{% block content %}
+<section class="landing-page full-bleed">
+  <div class="landing-page__map" aria-hidden="true"></div>
+  <div class="landing-inner">
+    <section class="landing-hero-grid">
+      <article class="card landing-hero-card">
+        <div class="landing-hero-card__icon" aria-hidden="true">
+          <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="27" cy="27" r="17" stroke="currentColor" stroke-width="4"/>
+            <path d="M39 39L55 55" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <p class="landing-eyebrow">Explainable student housing matches</p>
+        <h1>Student Housing Finder &amp; Matcher</h1>
+        <p class="landing-lead">Find reliable student housing with a clear Match Score based on budget, move-in date, house rules, and profile fit.</p>
+        <div class="button-row landing-actions">
+          <a class="button" href="{% url 'register-choice' %}">Create an account</a>
+          <a class="button secondary" href="{% url 'login' %}">Log in</a>
+        </div>
+        <ul class="landing-signal-list" aria-label="Match score factors">
+          <li>
+            <span class="landing-signal-label">Budget</span>
+            <span class="landing-signal-ring" aria-hidden="true"></span>
+          </li>
+          <li>
+            <span class="landing-signal-label">Move-in date</span>
+            <span class="landing-signal-ring" aria-hidden="true"></span>
+          </li>
+          <li>
+            <span class="landing-signal-label">House rules</span>
+            <span class="landing-signal-ring" aria-hidden="true"></span>
+          </li>
+          <li>
+            <span class="landing-signal-label">Hobbies</span>
+            <span class="landing-signal-ring" aria-hidden="true"></span>
+          </li>
+        </ul>
+      </article>
+
+      <article class="card landing-audience-card">
+        <div class="landing-audience-card__column">
+          <div class="landing-audience-card__icon landing-audience-card__icon--key" aria-hidden="true">
+            <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="42" cy="18" r="10" stroke="currentColor" stroke-width="3.5"/>
+              <circle cx="42" cy="18" r="2.3" fill="currentColor"/>
+              <path d="M35 25L18 42V52H28V46H34V40H40L48 32" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          <h2>For tenants</h2>
+          <p>Set your seeker profile, view match scores, and send contact requests to landlords.</p>
+        </div>
+        <div class="landing-audience-card__divider" aria-hidden="true"></div>
+        <div class="landing-audience-card__column">
+          <div class="landing-audience-card__icon" aria-hidden="true">
+            <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M12 30L32 14L52 30" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M18 28V50H46V28" stroke="currentColor" stroke-width="4" stroke-linejoin="round"/>
+              <path d="M27 50V38H37V50" stroke="currentColor" stroke-width="4" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          <h2>For landlords</h2>
+          <p>Create listings, upload photos, and review contact requests in one clear dashboard.</p>
+        </div>
+      </article>
+    </section>
+  </div>
+</section>
+{% endblock %}

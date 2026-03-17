@@ -1,0 +1,110 @@
+<article class="card listing-card {% if apartment.is_fully_rented %}rented{% endif %}">
+  <div class="card-tabs" role="tablist" aria-label="Listing view for apartment {{ apartment.id }}">
+    <button type="button" class="card-tab active" role="tab" aria-selected="true" aria-controls="listing-{{ apartment.id }}-apartment" data-card-tab="apartment" data-card-target="listing-{{ apartment.id }}">Apartment</button>
+    <button type="button" class="card-tab" role="tab" tabindex="-1" aria-selected="false" aria-controls="listing-{{ apartment.id }}-roommate" data-card-tab="roommate" data-card-target="listing-{{ apartment.id }}">Roommate</button>
+  </div>
+
+  <div id="listing-{{ apartment.id }}" class="card-tab-panels">
+    <div id="listing-{{ apartment.id }}-apartment" class="card-tab-panel active" role="tabpanel" data-card-panel="apartment">
+      {% if apartment.is_fully_rented %}
+        <div class="listing-status status-rented">{{ apartment.status_label }}</div>
+      {% elif request.user == apartment.owner and not apartment.public_visible %}
+        <div class="listing-status status-rented">Hidden from public search</div>
+      {% endif %}
+
+      {% if apartment.primary_image %}
+        <img loading="lazy" src="{{ apartment.primary_image.image.url }}?v={{ apartment.updated_at|date:'U' }}" alt="{{ apartment.primary_image.about|default:apartment.display_title }}">
+      {% else %}
+        <div class="listing-image placeholder-image">No image yet</div>
+      {% endif %}
+
+      <h3>{{ apartment.short_address }}</h3>
+      <div class="meta-list">
+        <span>£{{ apartment.rent_price }}/month</span>
+        <span>{{ apartment.get_listing_mode_display }}</span>
+        <span>Available {{ apartment.available_from }}</span>
+        {% if apartment.floor %}<span>Floor {{ apartment.floor }}</span>{% endif %}
+        {% if apartment.listing_mode == 'rooms' %}<span>{{ apartment.remaining_rooms }} room{{ apartment.remaining_rooms|pluralize }} left</span>{% endif %}
+      </div>
+
+      <p class="owner-line"><strong>Landlord:</strong> {{ apartment.owner.get_full_name|default:apartment.owner.email }} · <a href="mailto:{{ apartment.owner.email }}">{{ apartment.owner.email }}</a></p>
+
+      <p class="review-summary"><strong>Reviews:</strong> {{ apartment.review_summary }}</p>
+
+      {% if match %}
+        <div class="score-box">
+          <strong>Match Score: {{ match.score }}/100</strong>
+          <ul>
+            {% for reason in match.reasons|slice:':3' %}
+              <li>{{ reason }}</li>
+            {% endfor %}
+          </ul>
+        </div>
+      {% endif %}
+
+      <p>{{ apartment.about_text|truncatewords:18 }}</p>
+      <div class="button-row listing-actions">
+        <a class="button" href="{% url 'apartments:detail' apartment.id %}">View details</a>
+        {% if request.user.is_authenticated and request.user.is_tenant %}
+          {% if apartment.public_visible %}
+            <a class="button secondary" href="{% url 'apartments:create-request' apartment.id %}">Request contact</a>
+          {% else %}
+            <span class="listing-pill muted-pill">Already rented</span>
+          {% endif %}
+          <form method="post" action="{% url 'apartments:toggle-favourite' apartment.id %}" class="inline-form">
+            {% csrf_token %}
+            <input type="hidden" name="next" value="{{ request.get_full_path }}">
+            <button type="submit" class="button tertiary">{% if apartment.is_saved %}Saved{% else %}Save{% endif %}</button>
+          </form>
+        {% elif request.user == apartment.owner %}
+          <a class="button secondary" href="{% url 'apartments:edit' apartment.id %}">Edit</a>
+          {% if apartment.can_relist %}
+            <form method="post" action="{% url 'apartments:relist' apartment.id %}" class="inline-form">
+              {% csrf_token %}
+              <button type="submit" class="button success">Relist</button>
+            </form>
+          {% endif %}
+          <form method="post" action="{% url 'apartments:delete' apartment.id %}" class="inline-form">
+            {% csrf_token %}
+            <button type="submit" class="button danger" data-confirm-message="Delete this listing?">Delete</button>
+          </form>
+        {% endif %}
+      </div>
+    </div>
+
+    <div id="listing-{{ apartment.id }}-roommate" class="card-tab-panel" role="tabpanel" data-card-panel="roommate" hidden>
+      {% if apartment.approved_roommate_cards %}
+        <div class="roommate-list-in-card">
+          {% for rm in apartment.approved_roommate_cards %}
+            <div class="roommate-inline-card">
+              <div class="roommate-top">
+                {% if rm.tenant.avatar %}
+                  <img class="roommate-avatar" loading="lazy" src="{{ rm.tenant.avatar.url }}" alt="{{ rm.tenant.get_full_name|default:rm.tenant.email }}">
+                {% else %}
+                  <div class="roommate-avatar placeholder">{{ rm.tenant.first_name|default:rm.tenant.email|first|upper }}</div>
+                {% endif %}
+                <div>
+                  <strong>{{ rm.tenant.get_full_name|default:rm.tenant.email }}</strong>
+                  <div class="muted small-text">
+                    Gender: {{ rm.profile.get_gender_display|default:'Prefer not to say' }} ·
+                    Age: {{ rm.profile.age|default:'Not shared' }}
+                  </div>
+                </div>
+              </div>
+              <div class="badge-row roommate-hobby-row">
+                <strong>Hobbies:</strong>
+                {% for hobby in rm.hobbies %}
+                  <span class="badge">{{ hobby.name }}</span>
+                {% empty %}
+                  <span class="muted">No hobbies shared yet.</span>
+                {% endfor %}
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <div class="empty-state">No roommate information is available for this listing yet.</div>
+      {% endif %}
+    </div>
+  </div>
+</article>
