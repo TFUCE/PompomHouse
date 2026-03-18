@@ -14,6 +14,9 @@ User = get_user_model()
 
 
 class MessagingWorkflowTests(TestCase):
+    def login_as(self, user):
+        self.client.force_login(user)
+
     def setUp(self):
         self.client = Client()
         self.tenant = User.objects.create_user(
@@ -54,7 +57,7 @@ class MessagingWorkflowTests(TestCase):
         self.contact_request = ContactRequest.objects.create(apartment=self.apartment, tenant=self.tenant)
 
     def test_approving_request_creates_conversation(self):
-        self.client.login(email='landlord@example.com', password='testpass123')
+        self.login_as(self.landlord)
         response = self.client.get(reverse('apartments:update-request', args=[self.contact_request.id, 'approve']))
         self.assertRedirects(response, reverse('apartments:requests'))
         self.assertTrue(Conversation.objects.filter(contact_request=self.contact_request).exists())
@@ -66,7 +69,7 @@ class MessagingWorkflowTests(TestCase):
             tenant=self.tenant,
             landlord=self.landlord,
         )
-        self.client.login(email='other@example.com', password='testpass123')
+        self.login_as(self.other_user)
         response = self.client.get(reverse('messaging:detail', args=[conversation.id]))
         self.assertEqual(response.status_code, 404)
 
@@ -77,7 +80,7 @@ class MessagingWorkflowTests(TestCase):
             tenant=self.tenant,
             landlord=self.landlord,
         )
-        self.client.login(email='tenant@example.com', password='testpass123')
+        self.login_as(self.tenant)
         response = self.client.post(reverse('messaging:detail', args=[conversation.id]), {'body': 'Hello, is the room still available?'})
         self.assertRedirects(response, reverse('messaging:detail', args=[conversation.id]))
         self.assertEqual(Message.objects.filter(conversation=conversation).count(), 1)
@@ -93,7 +96,7 @@ class MessagingWorkflowTests(TestCase):
         )
         Message.objects.create(conversation=conversation, sender=self.tenant, body='Hello landlord')
 
-        self.client.login(email='landlord@example.com', password='testpass123')
+        self.login_as(self.landlord)
         home_response = self.client.get(reverse('home'))
         self.assertTrue(home_response.context['has_message_alert'])
 
@@ -137,7 +140,7 @@ class MessagingWorkflowTests(TestCase):
         )
         Message.objects.create(conversation=own_conversation, sender=self.landlord, body='Hello tenant')
 
-        self.client.login(email='tenant@example.com', password='testpass123')
+        self.login_as(self.tenant)
         response = self.client.get(reverse('messaging:list'))
 
         conversations = list(response.context['conversations'])

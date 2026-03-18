@@ -34,6 +34,9 @@ def listing_image(name='listing.gif'):
 
 @override_settings(MEDIA_ROOT='/tmp/findmyroomie_test_media')
 class ApartmentWorkflowTests(TestCase):
+    def login_as(self, user):
+        self.client.force_login(user)
+
     def setUp(self):
         self.client = Client()
         self.tenant = User.objects.create_user(
@@ -113,14 +116,14 @@ class ApartmentWorkflowTests(TestCase):
         self.assertIn('There is some hobby similarity with current roommates.', reasons)
 
     def test_duplicate_contact_request_is_not_created(self):
-        self.client.login(email='tenant@example.com', password='testpass123')
+        self.login_as(self.tenant)
         url = reverse('apartments:create-request', args=[self.apartment.id])
         self.client.get(url)
         self.client.get(url)
         self.assertEqual(ContactRequest.objects.filter(apartment=self.apartment, tenant=self.tenant).count(), 1)
 
     def test_landlord_cannot_create_contact_request(self):
-        self.client.login(email='landlord@example.com', password='testpass123')
+        self.login_as(self.landlord)
         response = self.client.get(reverse('apartments:create-request', args=[self.apartment.id]))
         self.assertRedirects(response, reverse('home'))
         self.assertEqual(ContactRequest.objects.count(), 0)
@@ -128,7 +131,7 @@ class ApartmentWorkflowTests(TestCase):
     def test_approving_entire_property_rejects_other_pending_requests(self):
         first_request = ContactRequest.objects.create(apartment=self.apartment, tenant=self.tenant)
         second_request = ContactRequest.objects.create(apartment=self.apartment, tenant=self.other_tenant)
-        self.client.login(email='landlord@example.com', password='testpass123')
+        self.login_as(self.landlord)
 
         response = self.client.get(reverse('apartments:update-request', args=[first_request.id, 'approve']))
         self.assertRedirects(response, reverse('apartments:requests'))
@@ -138,12 +141,12 @@ class ApartmentWorkflowTests(TestCase):
         self.assertEqual(second_request.status, ContactStatus.REJECTED)
 
     def test_non_owner_cannot_edit_apartment(self):
-        self.client.login(email='otherlandlord@example.com', password='testpass123')
+        self.login_as(self.other_landlord)
         response = self.client.get(reverse('apartments:edit', args=[self.apartment.id]))
         self.assertEqual(response.status_code, 404)
 
     def test_tenant_can_save_and_remove_favourite(self):
-        self.client.login(email='tenant@example.com', password='testpass123')
+        self.login_as(self.tenant)
         url = reverse('apartments:toggle-favourite', args=[self.apartment.id])
 
         first_response = self.client.post(url, {'next': reverse('home')})
@@ -155,7 +158,7 @@ class ApartmentWorkflowTests(TestCase):
         self.assertFalse(Favourite.objects.filter(tenant=self.tenant, apartment=self.apartment).exists())
 
     def test_landlord_cannot_save_favourite(self):
-        self.client.login(email='landlord@example.com', password='testpass123')
+        self.login_as(self.landlord)
         response = self.client.post(reverse('apartments:toggle-favourite', args=[self.apartment.id]))
         self.assertRedirects(response, reverse('home'))
         self.assertEqual(Favourite.objects.count(), 0)
@@ -166,7 +169,7 @@ class ApartmentWorkflowTests(TestCase):
             tenant=self.tenant,
             status=ContactStatus.APPROVED,
         )
-        self.client.login(email='tenant@example.com', password='testpass123')
+        self.login_as(self.tenant)
         response = self.client.post(
             reverse('apartments:save-review', args=[self.apartment.id]),
             {'rating': 5, 'comment': 'Really clear communication and the flat matched the photos.'},
@@ -179,7 +182,7 @@ class ApartmentWorkflowTests(TestCase):
 
     def test_pending_contact_request_cannot_review(self):
         ContactRequest.objects.create(apartment=self.apartment, tenant=self.tenant)
-        self.client.login(email='tenant@example.com', password='testpass123')
+        self.login_as(self.tenant)
         response = self.client.post(
             reverse('apartments:save-review', args=[self.apartment.id]),
             {'rating': 4, 'comment': 'Nice place and easy to communicate with the landlord.'},
@@ -197,7 +200,7 @@ class ApartmentWorkflowTests(TestCase):
         self.apartment.is_active = False
         self.apartment.save(update_fields=['is_active'])
 
-        self.client.login(email='tenant@example.com', password='testpass123')
+        self.login_as(self.tenant)
         response = self.client.get(reverse('apartments:detail', args=[self.apartment.id]))
 
         self.assertEqual(response.status_code, 200)
@@ -218,7 +221,7 @@ class ApartmentWorkflowTests(TestCase):
             tenant=self.tenant,
             status=ContactStatus.APPROVED,
         )
-        self.client.login(email='tenant@example.com', password='testpass123')
+        self.login_as(self.tenant)
 
         response = self.client.get(reverse('apartments:request-move-out', args=[stay.id]))
 
@@ -234,7 +237,7 @@ class ApartmentWorkflowTests(TestCase):
         )
         self.apartment.is_active = False
         self.apartment.save(update_fields=['is_active'])
-        self.client.login(email='landlord@example.com', password='testpass123')
+        self.login_as(self.landlord)
 
         approve_response = self.client.get(reverse('apartments:approve-move-out', args=[stay.id]))
         self.assertRedirects(approve_response, reverse('apartments:requests'))
@@ -250,7 +253,7 @@ class ApartmentWorkflowTests(TestCase):
 
     def test_landlord_sees_booking_alert_after_new_request(self):
         ContactRequest.objects.create(apartment=self.apartment, tenant=self.tenant)
-        self.client.login(email='landlord@example.com', password='testpass123')
+        self.login_as(self.landlord)
 
         response = self.client.get(reverse('home'))
 
@@ -259,7 +262,7 @@ class ApartmentWorkflowTests(TestCase):
 
     def test_booking_alert_clears_after_landlord_opens_booking_page(self):
         ContactRequest.objects.create(apartment=self.apartment, tenant=self.tenant)
-        self.client.login(email='landlord@example.com', password='testpass123')
+        self.login_as(self.landlord)
 
         self.client.get(reverse('apartments:requests'))
         response = self.client.get(reverse('home'))
@@ -268,22 +271,22 @@ class ApartmentWorkflowTests(TestCase):
 
     def test_tenant_sees_booking_alert_after_landlord_response(self):
         contact_request = ContactRequest.objects.create(apartment=self.apartment, tenant=self.tenant)
-        self.client.login(email='landlord@example.com', password='testpass123')
+        self.login_as(self.landlord)
         self.client.get(reverse('apartments:update-request', args=[contact_request.id, 'approve']))
         self.client.logout()
 
-        self.client.login(email='tenant@example.com', password='testpass123')
+        self.login_as(self.tenant)
         response = self.client.get(reverse('home'))
 
         self.assertTrue(response.context['has_booking_alert'])
 
     def test_booking_alert_clears_after_tenant_opens_booking_page(self):
         contact_request = ContactRequest.objects.create(apartment=self.apartment, tenant=self.tenant)
-        self.client.login(email='landlord@example.com', password='testpass123')
+        self.login_as(self.landlord)
         self.client.get(reverse('apartments:update-request', args=[contact_request.id, 'reject']))
         self.client.logout()
 
-        self.client.login(email='tenant@example.com', password='testpass123')
+        self.login_as(self.tenant)
         self.client.get(reverse('apartments:requests'))
         response = self.client.get(reverse('home'))
 
@@ -304,11 +307,11 @@ class ApartmentWorkflowTests(TestCase):
         self.apartment.is_active = False
         self.apartment.save(update_fields=['is_active'])
 
-        self.client.login(email='landlord@example.com', password='testpass123')
+        self.login_as(self.landlord)
         self.client.post(reverse('apartments:relist', args=[self.apartment.id]))
         self.client.logout()
 
-        self.client.login(email='tenant2@example.com', password='testpass123')
+        self.login_as(self.other_tenant)
         response = self.client.get(reverse('apartments:detail', args=[self.apartment.id]))
 
         self.assertEqual(response.status_code, 200)
@@ -323,7 +326,7 @@ class ApartmentWorkflowTests(TestCase):
         )
         self.apartment.is_active = False
         self.apartment.save(update_fields=['is_active'])
-        self.client.login(email='tenant@example.com', password='testpass123')
+        self.login_as(self.tenant)
 
         response = self.client.post(
             reverse('apartments:save-review', args=[self.apartment.id]),
@@ -335,7 +338,7 @@ class ApartmentWorkflowTests(TestCase):
         self.assertTrue(Review.objects.filter(apartment=self.apartment, reviewer=self.tenant).exists())
 
     def test_landlord_can_create_apartment_with_required_image(self):
-        self.client.login(email='landlord@example.com', password='testpass123')
+        self.login_as(self.landlord)
 
         response = self.client.post(
             reverse('apartments:add'),
@@ -363,7 +366,7 @@ class ApartmentWorkflowTests(TestCase):
         self.assertEqual(created.images.count(), 1)
 
     def test_create_apartment_requires_image_upload(self):
-        self.client.login(email='landlord@example.com', password='testpass123')
+        self.login_as(self.landlord)
 
         response = self.client.post(
             reverse('apartments:add'),
@@ -403,7 +406,7 @@ class ApartmentWorkflowTests(TestCase):
         first_request = ContactRequest.objects.create(apartment=self.apartment, tenant=self.tenant)
         second_request = ContactRequest.objects.create(apartment=self.apartment, tenant=self.other_tenant)
         third_request = ContactRequest.objects.create(apartment=self.apartment, tenant=third_tenant)
-        self.client.login(email='landlord@example.com', password='testpass123')
+        self.login_as(self.landlord)
 
         self.client.get(reverse('apartments:update-request', args=[first_request.id, 'approve']))
         self.client.get(reverse('apartments:update-request', args=[second_request.id, 'approve']))
@@ -425,7 +428,7 @@ class ApartmentWorkflowTests(TestCase):
             status=ContactStatus.APPROVED,
             approved_at=timezone.now() - timedelta(days=2),
         )
-        self.client.login(email='tenant2@example.com', password='testpass123')
+        self.login_as(self.other_tenant)
 
         response = self.client.get(reverse('apartments:create-request', args=[self.apartment.id]))
 
@@ -437,7 +440,7 @@ class ApartmentWorkflowTests(TestCase):
     def test_non_owner_cannot_relist_listing(self):
         self.apartment.is_active = False
         self.apartment.save(update_fields=['is_active'])
-        self.client.login(email='otherlandlord@example.com', password='testpass123')
+        self.login_as(self.other_landlord)
 
         response = self.client.post(reverse('apartments:relist', args=[self.apartment.id]))
 
@@ -447,6 +450,6 @@ class ApartmentWorkflowTests(TestCase):
 
 
     def test_favourites_page_requires_tenant_account(self):
-        self.client.login(email='landlord@example.com', password='testpass123')
+        self.login_as(self.landlord)
         response = self.client.get(reverse('apartments:favourites'))
         self.assertRedirects(response, reverse('home'))
